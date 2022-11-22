@@ -1,0 +1,64 @@
+##Installation instructions
+
+#Get LDSC from https://github.com/bulik/ldsc
+#follow installation instructions
+#Assuming you install conda, you'll have to use 'conda activate ldsc' to enable LDSC
+
+#Download LD scores from https://alkesgroup.broadinstitute.org/LDSCORE/
+
+#Specifically files 'w_hm3.snplist.bz2' which is the list of SNPs used, and eur_w_ld_chr.tar.bz2, which is hte LD scores
+#Unzip these files 
+
+ bzip2 -d  w_hm3.snplist.bz2
+ tar xjvf -d eur_w_ld_chr.tar.bz2
+
+
+
+##Runtime instructions 
+
+#If you have LDSC installed using conda, per their guidelines, load the LDSC module.
+ conda activate LDSC
+
+
+#Filter your dataset to the SNP list that is used in LDSC
+#This is achieved by joining the SNP list and your file
+
+#Notice that this assumes that column 1 is the SNP column (noted by rs-id), and that the SNP column header is named SNP. 
+#If the SNP column is not column 1, alter your commands
+#  join  -2 1  should  instead be -2 column_number_of_snp_here
+# LC_ALL=C sort -k1b,1  should instead be  LC_ALL=C sort -kcolumn_number_of_snp_hereb,column_number_of_snp_here
+# LC_ALL=C sets the locale so that rs-ids can be sorted properly. If you do not set the locale to C, join will not work
+
+
+LC_ALL=C join -1 1 -2 2  <(awk '{print $1}' /home/genetics/LDSC/eur_w_ld_chr/w_hm3.snplist | LC_ALL=C sort -k1b,1 ) <(zcat withage_icd_HL_EUR_merged_0.3r2fltr_full.tsv.gz.fuma.gz   |  LC_ALL=C sort -u -k2b,2 ) > withage_icd_HL_EUR_merged_0.3r2fltr_full.tsv.gz.fuma.gz.premunge
+
+#Now munge the summary statistics to the LD score regresison format
+#Having to set sample size is necessary, the summary data sets don't have this in the file itself
+#Sample sizes are written in the report from MVP
+
+ /home/genetics/LDSC/ldsc-master/munge_sumstats.py --chunksize 500000  --sumstats withage_icd_HL_EUR_merged_0.3r2fltr_full.tsv.gz.fuma.gz.premunge --N 463520 --frq A1FREQ --a1 ALLELE1 --a2 ALLELE0 --out withage_icd_HL_EUR_merged_0.3r2fltr_full.tsv.gz.fuma.gz.munge.gz
+
+#Note: this appends .sumstats.gz to your file name
+
+
+  /home/genetics/LDSC/ldsc-master/ldsc.py \
+ --h2  withage_icd_HL_EUR_merged_0.3r2fltr_full.tsv.gz.fuma.gz.munge.gz.sumstats.gz \
+ --ref-ld-chr /home/genetics/LDSC/eur_w_ld_chr/ \
+ --w-ld-chr  /home/genetics/LDSC/eur_w_ld_chr/ \
+ --out withage_icd_HL_EUR_merged_0.3r2fltr_full.tsv.gz.fuma.gz_heritability_noprev
+ 
+  --samp-prev 0.5361214 \
+ --pop-prev 0.5361214 \
+ 
+ 
+#  --ref-ld-chr and  --w-ld-chr provide paths to the same folder, where LD score information is stored (from file  eur_w_ld_chr.tar.bz2)
+#  --samp-prev is the sample prevalence (N cases/N total samples), coded as a proportion ranging from 0 to 1
+#  --pop-prev is the population prevalence, which you will have to supply (this is not empirically determined from the data), coded as a proportion ranging from 0 to 1
+
+
+  /home/genetics/LDSC/ldsc-master/ldsc.py \
+ --h2 /mnt/ukbb/adam/tinnitus_gwas/MVP_tinnitus/eur_jul8_2021_allchr.tin_icd_use.maf01.ADD.resultsa.fuma.gz.munge.gz.sumstats.gz \
+ --ref-ld-chr /home/genetics/LDSC/eur_w_ld_chr/ \
+ --w-ld-chr  /home/genetics/LDSC/eur_w_ld_chr/ \
+ --out eur_jul8_2021_allchr.tin_icd_use.maf01.ADD.resultsa.fuma.gz.munge.gz.sumstats.gz.ldsc
+ 
