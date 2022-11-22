@@ -1,0 +1,18 @@
+remotes::install_github("isglobal-brge/invClust")
+
+#Subset the genotype data to the inversion region, e.g.
+./plink2 --bfile /mnt/ukbb/adam/ptsd/bgeneur/ukb_unrel_"$chr"  --chr 8 --geno 0.01 --from-bp 7934925 --to-bp 11824441 --maf 0.01  --exclude  temp/UKB_ptsd_eur_unrelated_"$chr"_noexclusionsinonly.rmdup.mismatch --make-bed --out temp/UKB_8p23
+#Then load the data into R and run the algorithm
+
+library(invClust)
+library(snpStats)
+geno.data <- read.plink('temp/UKB_8p23')
+geno<-geno.data$genotypes
+roi<-data.frame(chr=8,LBP=7934925, RBP=11824441, reg= "inv1")
+annot.read<-geno.data$map
+annot<-annot.read[,c(1,2,4)]
+identical(annot[,2],colnames(geno)) #sanity check: should be true!!
+invcall<-invClust(roi=roi, wh = 1, geno=geno, annot=annot, dim=2)
+pdf('chr8p23inversion.pdf',7,7)
+plot(invcall)
+dev.off()
