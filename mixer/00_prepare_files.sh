@@ -1,9 +1,11 @@
 #!/bin/bash
 
  
- module load 2019
- module load Boost.Python/1.67.0-intel-2019b-Python-3.6.6
- module load Tk/8.6.8-GCCcore-8.3.0 
+ 
+ module load Boost/1.72.0-GCCcore-9.3.0-no_mpi
+ module load  Tkinter/3.8.2-GCCcore-9.3.0
+ #pip install matplotlib_venn --user
+ #pip install numdifftools --user
  
  #When you start LISA:
  #may not need this step anymore
